@@ -65,9 +65,12 @@ Public Class aaTemplateExtract
                 For Each galaxy In galaxies
                     galaxyList.Add(galaxy.Name)
                 Next
+            Else
+                Throw New ApplicationException("No Galaxies detected on this node")
             End If
-        Catch ex As Exception
-            errorMessage = ex.Message
+
+        Catch e As Exception
+            MessageBox.Show("Error occurred: " & e.Message)
         End Try
         Return galaxyList
     End Function
@@ -76,22 +79,27 @@ Public Class aaTemplateExtract
         showLogin = True
         loggedIn = False
         Try
-            myGalaxy = grAccess.QueryGalaxies(galaxyNode)(galaxyName)
+            If (galaxyNode IsNot Nothing) And (galaxyName IsNot Nothing) Then
+                myGalaxy = grAccess.QueryGalaxies(galaxyNode)(galaxyName)
 
-            ' TODO: Would like to dynamically show or hide the login dialog box based on security, 
-            ' but the API call inside of getAuthType() is not working as expected.
 
-            authMode = getAuthType()
-            'If authMode = "None" Then
-            '    ShowLogin = False
-            '    login("", "")
-            'Else
-            '    ShowLogin = True
-            '    LoggedIn = False
-            'End If
 
-        Catch ex As Exception
-            errorMessage = ex.Message
+                ' TODO: Would like to dynamically show or hide the login dialog box based on security, 
+                ' but the API call inside of getAuthType() is not working as expected.
+
+                authMode = getAuthType()
+                'If authMode = "None" Then
+                '    ShowLogin = False
+                '    login("", "")
+                'Else
+                '    ShowLogin = True
+                '    LoggedIn = False
+                'End If
+            Else
+                Throw New ApplicationException("No Node or Galaxy Selected")
+            End If
+        Catch e As Exception
+            MessageBox.Show("Error occurred: " & e.Message)
         End Try
 
         Return 0
@@ -120,8 +128,8 @@ Public Class aaTemplateExtract
         '        Case aaGRAccessApp.EAUTHMODE.eOSGroupBased
         '            mode = "OS Group"
         '    End Select
-        'Catch ex As Exception
-        '    errorMessage = ex.Message
+        'Catch e As Exception
+        '    MessageBox.Show("Error occurred: " & e.Message)
         'End Try
 
         mode = "Unknown. Click Login with blank User/Pass if no security."
@@ -149,11 +157,13 @@ Public Class aaTemplateExtract
                             templateList.Add(gTemplate.Tagname)
                         End If
                     Next
+                Else
+                    Throw New ApplicationException("No templates found")
                 End If
-
             End If
-        Catch ex As Exception
-            errorMessage = ex.Message
+
+        Catch e As Exception
+            MessageBox.Show("Error occurred: " & e.Message)
         End Try
 
         Return templateList
@@ -169,9 +179,9 @@ Public Class aaTemplateExtract
                 loggedIn = False
                 Return -1
             End If
-        Catch ex As Exception
+        Catch e As Exception
             loggedIn = False
-            errorMessage = ex.Message
+            MessageBox.Show("Error occurred: " & e.Message)
             Return -2
         End Try
 
@@ -241,9 +251,8 @@ Public Class aaTemplateExtract
 
             End If
 
-        Catch ex As Exception
-            errorMessage = ex.Message
-            Return templateData
+        Catch e As Exception
+            MessageBox.Show("Error occurred: " & e.Message)
         End Try
 
         Return templateData

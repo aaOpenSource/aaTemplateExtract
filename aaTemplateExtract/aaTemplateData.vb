@@ -39,11 +39,11 @@ Public Class aaTemplateData
     End Sub
 
     Public Sub AddScript(ByVal ScriptData As aaScriptData)
-        scripts.Add(ScriptData, ScriptData.ScriptName)
+        scripts.Add(ScriptData, ScriptData.Name)
     End Sub
 
     Public Sub AddAttribute(ByVal AttributeData As aaAttributeData)
-        attributes.Add(AttributeData, AttributeData.AttributeName)
+        attributes.Add(AttributeData, AttributeData.Name)
     End Sub
 
 End Class
@@ -53,7 +53,7 @@ Public Class aaScriptData
     ' Author: Eliot Landrum <elandrum@stonetek.com>
     ' Description: This class stores an individual script's data in an XML serializable format
 
-    Public ScriptName As String
+    Public Name As String
     Public ScriptExecutionGroup As String
     Public ScriptOrder As Integer
     Public OffScanText As String
@@ -72,7 +72,7 @@ Public Class aaScriptData
 
     End Sub
 
-    Public Sub New(ByVal ScriptName As String, _
+    Public Sub New(ByVal Name As String, _
         ByVal ScriptExecutionGroup As String, _
         ByVal ScriptOrder As Integer, _
         ByVal OffScanText As String, _
@@ -87,7 +87,7 @@ Public Class aaScriptData
         ByVal RunsAsync As Boolean, _
         ByVal ExecuteText As String)
 
-        Me.ScriptName = ScriptName
+        Me.Name = Name
         Me.ScriptExecutionGroup = ScriptExecutionGroup
         Me.ScriptOrder = ScriptOrder
         Me.OffScanText = OffScanText
@@ -106,18 +106,141 @@ Public Class aaScriptData
 
 End Class
 
+<Serializable()> _
 Public Class aaAttributeData
     ' Author: Eliot Landrum <elandrum@stonetek.com>
     ' Description: This class stores an individual attribute's parameters in an XML serializable format
 
-    Public AttributeName As String
+    Public Name As String
 
     Public Sub New()
 
     End Sub
 
-    Public Sub New(ByVal AttributeName As String)
-        Me.AttributeName = AttributeName
+    Public Sub New(ByVal Name As String)
+        Me.Name = Name
     End Sub
 
+End Class
+
+<Serializable()> _
+Public Class aaDiscreteAttrData
+    ' Author: Eliot Landrum <elandrum@stonetek.com>
+    ' Description: This class stores an individual attribute's parameters in an XML serializable format
+
+    Public Name As String
+
+    Public AttributeType As String
+    Public AccessMode As String
+    Public Category As String
+    Public Buffered As Boolean
+    Public Description As String
+    Public InitialState As Boolean
+    Public EventOnChange As Boolean
+    Public InvertValue As Boolean
+    Public IO As aaAttrIO
+    Public StateLabels As aaAttrStateLabels
+    Public History As aaAttrHistoryDiscrete
+    Public StateAlarm As aaAttrStateAlarm
+    Public BadValueAlarm As aaAttrBadValueAlarm
+    Public Statistics As aaAttrStatistics
+
+    Public Sub New()
+
+    End Sub
+
+    Public Sub New(ByVal Name As String)
+        Me.Name = Name
+    End Sub
+
+End Class
+
+<Serializable()> _
+Public Class aaAttrIO
+    Public InputSource As String
+    Public OutputDiffers As Boolean
+    Public OutputDest As String
+    Public Sub New()
+    End Sub
+    Public Sub New(ByVal InputSource As String, ByVal OutputDiffers As Boolean, ByVal OutputDest As String)
+        Me.InputSource = InputSource
+        Me.OutputDiffers = OutputDiffers
+        Me.OutputDest = OutputDest
+    End Sub
+End Class
+
+<Serializable()> _
+Public Class aaAttrStateLabels
+    Public Enabled As Boolean
+    Public OffMsg As String
+    Public OnMsg As String
+    Public Sub New()
+    End Sub
+    Public Sub New(ByVal Enabled As Boolean, ByVal OffMsg As String, ByVal OnMsg As String)
+        Me.Enabled = Enabled
+        Me.OffMsg = OffMsg
+        Me.OnMsg = OnMsg
+    End Sub
+End Class
+
+<Serializable()> _
+Public Class aaAttrHistoryDiscrete
+    Public Enabled As Boolean
+    Public StoragePeriod As Integer
+    Public Sub New()
+    End Sub
+    Public Sub New(ByVal Enabled As Boolean, ByVal StoragePeriod As Integer)
+        Me.Enabled = Enabled
+        Me.StoragePeriod = StoragePeriod
+    End Sub
+End Class
+
+<Serializable()> _
+Public Class aaAttrStateAlarm
+    Public Enabled As Boolean
+    Public ActiveAlarmState As Boolean
+    Public Priority As Integer
+    Public AlarmMsg As String
+    Public Category As String
+    Public Deadband As String
+    Public Sub New()
+    End Sub
+    Public Sub New(ByVal Enabled As Boolean, ByVal ActiveAlarmState As Boolean, _
+                   ByVal Priority As Integer, ByVal AlarmMsg As String, _
+                   ByVal Category As String, ByVal Deadband As String)
+        Me.Enabled = Enabled
+        Me.ActiveAlarmState = ActiveAlarmState
+        Me.Priority = Priority
+        Me.AlarmMsg = AlarmMsg
+        Me.Category = Category
+        Me.Deadband = Deadband
+    End Sub
+End Class
+
+<Serializable()> _
+Public Class aaAttrBadValueAlarm
+    Public Enabled As Boolean
+    Public Priority As Integer
+    Public AlarmMsg As String
+    Public Sub New()
+    End Sub
+    Public Sub New(ByVal Enabled As Boolean, ByVal Priority As Integer, ByVal AlarmMsg As String)
+        Me.Enabled = Enabled
+        Me.Priority = Priority
+        Me.AlarmMsg = AlarmMsg
+    End Sub
+End Class
+
+<Serializable()> _
+Public Class aaAttrStatistics
+    Public Enabled As Boolean
+    Public AutoResetOnBadInput As Boolean
+    Public SampleSize As Integer ' only used on analog
+    Public Sub New()
+    End Sub
+    Public Sub New(ByVal Enabled As Boolean, ByVal AutoResetOnBadInput As Boolean, ByVal SampleSize As Integer)
+        Me.Enabled = Enabled
+        Me.AutoResetOnBadInput = AutoResetOnBadInput
+        Me.SampleSize = SampleSize
+    End Sub
 End Class

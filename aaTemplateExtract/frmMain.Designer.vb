@@ -47,11 +47,12 @@ Partial Class frmMain
         Me.Label10 = New System.Windows.Forms.Label()
         Me.txtNodeName = New System.Windows.Forms.TextBox()
         Me.btnRefreshGalaxies = New System.Windows.Forms.Button()
-        Me.Label11 = New System.Windows.Forms.Label()
-        Me.lblStatus = New System.Windows.Forms.Label()
         Me.btnRefreshTemplates = New System.Windows.Forms.Button()
         Me.chkHideBaseTemplates = New System.Windows.Forms.CheckBox()
+        Me.StatusStrip1 = New System.Windows.Forms.StatusStrip()
+        Me.lblStatus = New System.Windows.Forms.ToolStripStatusLabel()
         Me.grpLoginInput.SuspendLayout()
+        Me.StatusStrip1.SuspendLayout()
         Me.SuspendLayout()
         '
         'cmboGalaxyList
@@ -92,7 +93,7 @@ Partial Class frmMain
         '
         'btnExport
         '
-        Me.btnExport.Location = New System.Drawing.Point(35, 391)
+        Me.btnExport.Location = New System.Drawing.Point(33, 381)
         Me.btnExport.Name = "btnExport"
         Me.btnExport.Size = New System.Drawing.Size(75, 23)
         Me.btnExport.TabIndex = 10
@@ -103,11 +104,11 @@ Partial Class frmMain
         '
         Me.Label6.AutoSize = True
         Me.Label6.ForeColor = System.Drawing.Color.Red
-        Me.Label6.Location = New System.Drawing.Point(126, 396)
+        Me.Label6.Location = New System.Drawing.Point(126, 386)
         Me.Label6.Name = "Label6"
-        Me.Label6.Size = New System.Drawing.Size(233, 13)
+        Me.Label6.Size = New System.Drawing.Size(216, 13)
         Me.Label6.TabIndex = 11
-        Me.Label6.Text = "Warning! Will overwrite any existing files in path."
+        Me.Label6.Text = "Warning! May overwrite existing files in path."
         '
         'Label7
         '
@@ -278,23 +279,6 @@ Partial Class frmMain
         Me.btnRefreshGalaxies.Text = "q"
         Me.btnRefreshGalaxies.UseVisualStyleBackColor = True
         '
-        'Label11
-        '
-        Me.Label11.AutoSize = True
-        Me.Label11.Location = New System.Drawing.Point(32, 417)
-        Me.Label11.Name = "Label11"
-        Me.Label11.Size = New System.Drawing.Size(40, 13)
-        Me.Label11.TabIndex = 25
-        Me.Label11.Text = "Status:"
-        '
-        'lblStatus
-        '
-        Me.lblStatus.AutoSize = True
-        Me.lblStatus.Location = New System.Drawing.Point(78, 417)
-        Me.lblStatus.Name = "lblStatus"
-        Me.lblStatus.Size = New System.Drawing.Size(0, 13)
-        Me.lblStatus.TabIndex = 26
-        '
         'btnRefreshTemplates
         '
         Me.btnRefreshTemplates.Font = New System.Drawing.Font("Webdings", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(2, Byte))
@@ -317,15 +301,28 @@ Partial Class frmMain
         Me.chkHideBaseTemplates.Text = "Hide Base Templates"
         Me.chkHideBaseTemplates.UseVisualStyleBackColor = True
         '
+        'StatusStrip1
+        '
+        Me.StatusStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.lblStatus})
+        Me.StatusStrip1.Location = New System.Drawing.Point(0, 417)
+        Me.StatusStrip1.Name = "StatusStrip1"
+        Me.StatusStrip1.Size = New System.Drawing.Size(390, 22)
+        Me.StatusStrip1.TabIndex = 29
+        Me.StatusStrip1.Text = "StatusStrip1"
+        '
+        'lblStatus
+        '
+        Me.lblStatus.Name = "lblStatus"
+        Me.lblStatus.Size = New System.Drawing.Size(0, 17)
+        '
         'frmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(390, 439)
+        Me.Controls.Add(Me.StatusStrip1)
         Me.Controls.Add(Me.chkHideBaseTemplates)
         Me.Controls.Add(Me.btnRefreshTemplates)
-        Me.Controls.Add(Me.lblStatus)
-        Me.Controls.Add(Me.Label11)
         Me.Controls.Add(Me.btnRefreshGalaxies)
         Me.Controls.Add(Me.txtNodeName)
         Me.Controls.Add(Me.Label10)
@@ -349,6 +346,8 @@ Partial Class frmMain
         Me.Text = "aaTemplateExtract"
         Me.grpLoginInput.ResumeLayout(False)
         Me.grpLoginInput.PerformLayout()
+        Me.StatusStrip1.ResumeLayout(False)
+        Me.StatusStrip1.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -377,10 +376,10 @@ Partial Class frmMain
     Friend WithEvents Label10 As System.Windows.Forms.Label
     Friend WithEvents txtNodeName As System.Windows.Forms.TextBox
     Friend WithEvents btnRefreshGalaxies As System.Windows.Forms.Button
-    Friend WithEvents Label11 As System.Windows.Forms.Label
-    Friend WithEvents lblStatus As System.Windows.Forms.Label
     Friend WithEvents btnLogin As System.Windows.Forms.Button
     Friend WithEvents btnRefreshTemplates As System.Windows.Forms.Button
     Friend WithEvents chkHideBaseTemplates As System.Windows.Forms.CheckBox
+    Friend WithEvents StatusStrip1 As System.Windows.Forms.StatusStrip
+    Friend WithEvents lblStatus As System.Windows.Forms.ToolStripStatusLabel
 
 End Class

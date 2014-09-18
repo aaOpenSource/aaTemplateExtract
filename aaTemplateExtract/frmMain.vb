@@ -51,7 +51,7 @@ Public Class frmMain
 
         btnExport.Enabled = False
 
-        lblStatus.Text = "Ready"
+        lblStatus.Text = ""
 
     End Sub
 
@@ -77,7 +77,7 @@ Public Class frmMain
         Else
             lstTemplates.Items.Clear()
         End If
-        lblStatus.Text = "Ready"
+        lblStatus.Text = ""
     End Sub
 
     Public Sub clearGalaxyInfo()
@@ -106,7 +106,7 @@ Public Class frmMain
 
                 For Each ScriptData In TemplateData.scripts
 
-                    ScriptFile = TemplateDirectory + ScriptData.ScriptName + ".xml"
+                    ScriptFile = TemplateDirectory + ScriptData.Name + ".xml"
                     objStreamWriter = New StreamWriter(ScriptFile)
                     Dim x As New XmlSerializer(ScriptData.GetType)
                     x.Serialize(objStreamWriter, ScriptData)
@@ -115,8 +115,8 @@ Public Class frmMain
                 Next
 
             Next
-        Catch ex As Exception
-            lblStatus.Text = ex.Message
+        Catch e As Exception
+            MessageBox.Show("Error occurred: " & e.Message)
         End Try
 
     End Sub
@@ -159,7 +159,7 @@ Public Class frmMain
 
         ' do any UI clean up work that might be needed when the galaxy name changes
         refreshGalaxyInfo(cmboGalaxyList.SelectedValue)
-        lblStatus.Text = "Ready"
+        lblStatus.Text = ""
     End Sub
 
 
@@ -182,7 +182,7 @@ Public Class frmMain
 
         exportTemplatesToFile(ExportFolder, TemplateNames)
 
-        lblStatus.Text = "Ready"
+        lblStatus.Text = ""
 
     End Sub
 
@@ -193,7 +193,7 @@ Public Class frmMain
 
         If aaTemplateExtract.login(txtUserInput.Text, txtPwdInput.Text) >= 0 Then
             lstTemplates.DataSource = aaTemplateExtract.getTemplates(chkHideBaseTemplates.CheckState)
-            lblStatus.Text = "Ready"
+            lblStatus.Text = ""
         Else
             lblStatus.Text = "Error logging in"
         End If
@@ -204,6 +204,6 @@ Public Class frmMain
     Private Sub btnRefreshTemplates_Click(sender As Object, e As EventArgs) Handles btnRefreshTemplates.Click
         lblStatus.Text = "Refreshing Template List"
         lstTemplates.DataSource = aaTemplateExtract.getTemplates(chkHideBaseTemplates.CheckState)
-        lblStatus.Text = "Ready"
+        lblStatus.Text = ""
     End Sub
 End Class

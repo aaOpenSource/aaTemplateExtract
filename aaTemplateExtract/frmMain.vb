@@ -91,9 +91,12 @@ Public Class frmMain
         Dim objStreamWriter As StreamWriter
         Dim TemplateDirectory As String
         Dim ScriptFile As String
+        Dim AttributeFile As String
         Dim TemplateName As String
-        Dim TemplateData As New aaTemplateData
-        Dim ScriptData As New aaScriptData
+
+        ' I'm not a fan of all the xmlns:xsd and xmlns:xsi in the top of our XML document, so creating a new, blank namespace for writing
+        Dim ns = New System.Xml.Serialization.XmlSerializerNamespaces()
+        ns.Add("", "")
 
         Try
             For Each TemplateName In TemplateNames
@@ -102,17 +105,30 @@ Public Class frmMain
                 TemplateDirectory = FilePath + "\" + Replace(TemplateName, "$", "") + "\"
                 My.Computer.FileSystem.CreateDirectory(TemplateDirectory)
 
-                TemplateData = aaTemplateExtract.getTemplateData(TemplateName)
+                Dim TemplateData = aaTemplateExtract.getTemplateData(TemplateName)
 
-                For Each ScriptData In TemplateData.scripts
-
-                    ScriptFile = TemplateDirectory + ScriptData.Name + ".xml"
+                My.Computer.FileSystem.CreateDirectory(TemplateDirectory + "\Scripts\")
+                For Each ScriptData As aaScript In TemplateData.Scripts
+                    ScriptFile = TemplateDirectory + "\Scripts\" + ScriptData.Name + ".xml"
                     objStreamWriter = New StreamWriter(ScriptFile)
                     Dim x As New XmlSerializer(ScriptData.GetType)
-                    x.Serialize(objStreamWriter, ScriptData)
+                    x.Serialize(objStreamWriter, ScriptData, ns)
+                    objStreamWriter.Close()
+                Next
+
+                My.Computer.FileSystem.CreateDirectory(TemplateDirectory + "\Attributes\")
+
+                If TemplateData.FieldAttributesDiscrete.Count > 0 Then
+
+                    AttributeFile = TemplateDirectory + "\Attributes\Field Attributes - Discrete.xml"
+                    objStreamWriter = New StreamWriter(AttributeFile)
+                    For Each AttributeData As aaFieldAttributeDiscrete In TemplateData.FieldAttributesDiscrete
+                        Dim x As New XmlSerializer(AttributeData.GetType)
+                        x.Serialize(objStreamWriter, AttributeData, ns)
+                    Next
                     objStreamWriter.Close()
 
-                Next
+                End If
 
             Next
         Catch e As Exception

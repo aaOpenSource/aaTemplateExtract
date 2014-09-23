@@ -187,15 +187,12 @@ Public Class aaTemplateExtract
 
     End Function
 
-    Public Function getTemplateData(ByVal TemplateName As String) As aaTemplateData
+    Public Function getTemplateData(ByVal TemplateName As String) As aaTemplate
         Dim templateList(1) As String
         Dim gTemplates As aaGRAccessApp.IgObjects
         Dim gTemplate As aaGRAccessApp.ITemplate
-        Dim scriptList As New Collection
-        Dim scriptData As aaScriptData
-        Dim templateData As aaTemplateData
-
-        templateData = New aaTemplateData()
+        Dim templateData As New aaTemplate()
+        Dim scriptData As New Collection()
 
         Try
             If loggedIn Then
@@ -206,49 +203,19 @@ Public Class aaTemplateExtract
                 gTemplates = myGalaxy.QueryObjectsByName(aaGRAccessApp.EgObjectIsTemplateOrInstance.gObjectIsTemplate, templateList)
                 resultStatus = myGalaxy.CommandResult.Successful
                 If resultStatus And (gTemplates IsNot Nothing) And (gTemplates.count > 0) Then
-                    For Each gTemplate In gTemplates
-                        ' in reality we will only have one template, so this loop will only happen once
+                    gTemplate = gTemplates(1)
 
-                        ' instantiate our new template data object
-                        templateData = New aaTemplateData(gTemplate.Tagname)
+                    ' get all of the Configurable Attributes, which is where the script data lives
+                    Dim gAttributes = gTemplate.ConfigurableAttributes
 
-                        ' get all of the Configurable Attributes, which is where the script data lives
-                        Dim gAttributes = gTemplate.ConfigurableAttributes
-
-                        ' get all the script names
-                        For Each gAttribute As aaGRAccessApp.IAttribute In gAttributes
-                            If InStr(gAttribute.Name, ".ExecuteText") > 0 Then
-                                scriptList.Add(Replace(gAttribute.Name, ".ExecuteText", ""))
-                            End If
-                        Next
-
-                        ' loop through each script name and get all of the attributes for that script
-                        For Each script In scriptList
-
-                            ' build a script object with the attributes
-                            scriptData = New aaScriptData(script, _
-                                                            gAttributes.Item(script + ".ScriptExecutionGroup").value.GetString, _
-                                                            gAttributes.Item(script + ".ScriptOrder").value.GetString, _
-                                                            gAttributes.Item(script + ".OffScanText").value.GetString, _
-                                                            gAttributes.Item(script + ".OnScanText").value.GetString, _
-                                                            gAttributes.Item(script + ".ShutdownText").value.GetString, _
-                                                            gAttributes.Item(script + ".StartupText").value.GetString, _
-                                                            gAttributes.Item(script + ".Expression").value.GetString, _
-                                                            gAttributes.Item(script + ".TriggerType").value.GetString, _
-                                                            gAttributes.Item(script + ".TriggerPeriod").value.GetString, _
-                                                            gAttributes.Item(script + ".TriggerOnQualityChange").value.GetBoolean, _
-                                                            gAttributes.Item(script + ".ExecuteTimeout.Limit").value.GetInteger, _
-                                                            gAttributes.Item(script + ".RunsAsync").value.GetString, _
-                                                            gAttributes.Item(script + ".ExecuteText").value.GetString)
-
-                            ' pop it into our template data object
-                            templateData.AddScript(scriptData)
-                        Next
-
-                    Next
-
+                    ' instantiate our new template data object with all of our collected information
+                    templateData = New aaTemplate(gTemplate.Tagname, _
+                                                  getScripts(gAttributes),
+                                                  GetFieldAttributesDiscrete(gAttributes), _
+                                                  GetFieldAttributesAnalog(gAttributes))
                 End If
-
+            Else
+                Throw New ApplicationException("Not Logged In")
             End If
 
         Catch e As Exception
@@ -257,6 +224,162 @@ Public Class aaTemplateExtract
 
         Return templateData
 
+    End Function
+
+    Private Function getScripts(gAttributes As aaGRAccess.IAttributes) As Collection
+        Dim scriptList As New Collection
+        Dim scriptData As aaScript
+        Dim templateScripts As New Collection()
+
+        ' get all the script names
+        For Each gAttribute As aaGRAccessApp.IAttribute In gAttributes
+            If InStr(gAttribute.Name, ".ExecuteText") > 0 Then
+                scriptList.Add(Replace(gAttribute.Name, ".ExecuteText", ""))
+            End If
+        Next
+
+        ' loop through each script name and get all of the attributes for that script
+        For Each script In scriptList
+
+            ' build a script object with the attributes
+            scriptData = New aaScript(script, _
+                                            gAttributes.Item(script + ".ScriptExecutionGroup").value.GetString, _
+                                            gAttributes.Item(script + ".ScriptOrder").value.GetString, _
+                                            gAttributes.Item(script + ".OffScanText").value.GetString, _
+                                            gAttributes.Item(script + ".OnScanText").value.GetString, _
+                                            gAttributes.Item(script + ".ShutdownText").value.GetString, _
+                                            gAttributes.Item(script + ".StartupText").value.GetString, _
+                                            gAttributes.Item(script + ".Expression").value.GetString, _
+                                            gAttributes.Item(script + ".TriggerType").value.GetString, _
+                                            gAttributes.Item(script + ".TriggerPeriod").value.GetString, _
+                                            gAttributes.Item(script + ".TriggerOnQualityChange").value.GetBoolean, _
+                                            gAttributes.Item(script + ".ExecuteTimeout.Limit").value.GetInteger, _
+                                            gAttributes.Item(script + ".RunsAsync").value.GetString, _
+                                            gAttributes.Item(script + ".ExecuteText").value.GetString)
+
+            ' pop it on to a collection of scripts for this template
+            templateScripts.Add(scriptData, script)
+        Next
+
+        Return templateScripts
+    End Function
+
+    Private Function GetFieldAttributesDiscrete(gAttributes As aaGRAccess.IAttributes) As Collection
+        Dim FieldAttributes As New Collection()
+
+        ' A list of the Field Attributes are stored in an XML fragment in the UserAttrData attribute
+        Dim UserAttrData As XElement = XElement.Parse(gAttributes.Item("UserAttrData").value.GetString)
+
+        Dim attrList = UserAttrData.<DiscreteAttr>.Attributes("Name")
+
+        For Each attr In attrList
+            Dim attrName = attr.Value
+
+            ' These are all groupings on the Field Attributes editing screen. 
+            ' They are not necessarily grouped nicely in the Attributes list. 
+            ' I prefer that it be organized like the screen for easy comparing.
+
+            ' The basic input/output attributes
+            Dim IO = New aaAttrIO(GetAttrString(attrName + ".Input.InputSource", gAttributes), _
+                                   GetAttrBoolean(attrName + ".Output.DiffAddr", gAttributes), _
+                                   GetAttrString(attrName + ".Output.OutputDest", gAttributes))
+
+            ' State Labels, can be disabled
+            Dim StateLabels = New aaAttrStateLabels(GetAttrBoolean(attrName + ".UseOffOnMsg", gAttributes), _
+                                                     GetAttrString(attrName + ".OffMsg", gAttributes), _
+                                                     GetAttrString(attrName + ".OnMsg", gAttributes))
+
+            ' Historization, can be disabled
+            Dim History = New aaAttrHistoryDiscrete(GetAttrBoolean(attrName + ".Historized", gAttributes), _
+                                                     GetAttrInteger(attrName + ".ForceStoragePeriod", gAttributes))
+
+            ' State Alarms, can be disabled
+            Dim StateAlarm = New aaAttrStateAlarm(GetAttrBoolean(attrName + ".Alarmed", gAttributes), _
+                                                   GetAttrBoolean(attrName + ".ActiveAlarmState", gAttributes), _
+                                                   GetAttrInteger(attrName + ".Priority", gAttributes), _
+                                                   GetAttrString(attrName + ".DescAttrName", gAttributes), _
+                                                   GetAttrString(attrName + ".Category", gAttributes), _
+                                                   GetAttrString(attrName + ".TimeDeadband", gAttributes))
+
+            ' Bad Value Alarm, can be disabled
+            Dim BadValueAlarm = New aaAttrBadValueAlarm(GetAttrBoolean(attrName + ".Bad.Alarmed", gAttributes), _
+                                                         GetAttrInteger(attrName + ".Bad.Priority", gAttributes), _
+                                                         GetAttrInteger(attrName + ".Bad.DescAttrName", gAttributes))
+
+            ' Statistics, can be disabled
+            Dim Statistics = New aaAttrStatistics(GetAttrBoolean(attrName + ".HasStatistics", gAttributes), _
+                                                   GetAttrBoolean(attrName + ".Stats.AutoResetOnBadInput", gAttributes), 0)
+
+            ' Now, put all of the info together into one data set for this attribute
+            Dim DiscreteAttrData = New aaFieldAttributeDiscrete(attrName, _
+                                                           GetAttrString(attrName + ".AccessMode", gAttributes), _
+                                                           GetAttrString(attrName + ".Category", gAttributes), _
+                                                           GetAttrString(attrName + "._HasBuffer", gAttributes), _
+                                                           GetAttrString(attrName + ".Desc", gAttributes), _
+                                                           GetAttrBoolean(attrName, gAttributes), _
+                                                           GetAttrBoolean(attrName + ".LogDataChangeEvent", gAttributes), _
+                                                           GetAttrBoolean(attrName + ".InvertValue", gAttributes), _
+                                                           IO, StateLabels, History, StateAlarm, BadValueAlarm, Statistics)
+
+
+            ' Finally, add it to a (growing) collection of field attributes
+            FieldAttributes.Add(DiscreteAttrData)
+        Next
+
+        Return FieldAttributes
+    End Function
+
+    Private Function GetFieldAttributesAnalog(gAttributes As aaGRAccess.IAttributes) As Collection
+        Dim FieldAttributes As New Collection()
+
+        ' A list of the Field Attributes are stored in an XML fragment in the UserAttrData attribute
+        Dim UserAttrData As XElement = XElement.Parse(gAttributes.Item("UserAttrData").value.GetString)
+
+        Dim attrList = UserAttrData.<AnalogAttr>.Attributes("Name")
+
+        For Each attr In attrList
+            Dim attrName = attr.Value
+
+            ' TODO (this is much bigger than the Discrete Attributes)
+        Next
+
+        Return FieldAttributes
+    End Function
+
+    Private Function GetAttrString(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As String
+        ' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program
+        Try
+            Return gAttributes.Item(AttributeName).value.GetString()
+        Catch ex As Exception
+            Return ""
+        End Try
+    End Function
+
+    Private Function GetAttrBoolean(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As Boolean
+        ' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program
+        Try
+            Return gAttributes.Item(AttributeName).value.GetBoolean()
+        Catch ex As Exception
+            Return False
+        End Try
+    End Function
+
+    Private Function GetAttrInteger(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As Integer
+        ' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program
+        Try
+            Return gAttributes.Item(AttributeName).value.GetInteger()
+        Catch ex As Exception
+            Return 0
+        End Try
+    End Function
+
+    Private Function GetAttrFloat(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As Double
+        ' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program
+        Try
+            Return gAttributes.Item(AttributeName).value.GetFloat()
+        Catch ex As Exception
+            Return 0
+        End Try
     End Function
 
 End Class

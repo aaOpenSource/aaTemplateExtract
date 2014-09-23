@@ -22,38 +22,34 @@
 Imports System.Xml.Serialization
 
 <Serializable()> _
-Public Class aaTemplateData
+Public Class aaTemplate
     ' Author: Eliot Landrum <elandrum@stonetek.com>
     ' Description: This class stores ArchestrA Galaxy template data in an XML serializable format
 
-    Public name As String ' the template's name
-    Public scripts As New Collection()
-    Public attributes As New Collection()
+    <XmlAttribute("name")> Public Name As String
+    Public Scripts As New Collection()
+    Public FieldAttributesDiscrete As New Collection()
+    Public FieldAttributesAnalog As New Collection()
 
     Public Sub New()
 
     End Sub
 
-    Public Sub New(ByVal name As String)
-        Me.name = Name
-    End Sub
-
-    Public Sub AddScript(ByVal ScriptData As aaScriptData)
-        scripts.Add(ScriptData, ScriptData.Name)
-    End Sub
-
-    Public Sub AddAttribute(ByVal AttributeData As aaAttributeData)
-        attributes.Add(AttributeData, AttributeData.Name)
+    Public Sub New(ByVal Name As String, ByVal Scripts As Collection, ByVal FieldAttributesDiscrete As Collection, ByVal FieldAttributesAnalog As Collection)
+        Me.Name = Name
+        Me.Scripts = Scripts
+        Me.FieldAttributesDiscrete = FieldAttributesDiscrete
+        Me.FieldAttributesAnalog = FieldAttributesAnalog
     End Sub
 
 End Class
 
 <Serializable()> _
-Public Class aaScriptData
+Public Class aaScript
     ' Author: Eliot Landrum <elandrum@stonetek.com>
     ' Description: This class stores an individual script's data in an XML serializable format
 
-    Public Name As String
+    <XmlAttribute("name")> Public Name As String
     Public ScriptExecutionGroup As String
     Public ScriptOrder As Integer
     Public OffScanText As String
@@ -107,28 +103,11 @@ Public Class aaScriptData
 End Class
 
 <Serializable()> _
-Public Class aaAttributeData
+Public Class aaFieldAttributeDiscrete
     ' Author: Eliot Landrum <elandrum@stonetek.com>
     ' Description: This class stores an individual attribute's parameters in an XML serializable format
 
-    Public Name As String
-
-    Public Sub New()
-
-    End Sub
-
-    Public Sub New(ByVal Name As String)
-        Me.Name = Name
-    End Sub
-
-End Class
-
-<Serializable()> _
-Public Class aaDiscreteAttrData
-    ' Author: Eliot Landrum <elandrum@stonetek.com>
-    ' Description: This class stores an individual attribute's parameters in an XML serializable format
-
-    Public Name As String
+    <XmlAttribute("name")> Public Name As String
 
     Public AttributeType As String
     Public AccessMode As String
@@ -149,8 +128,28 @@ Public Class aaDiscreteAttrData
 
     End Sub
 
-    Public Sub New(ByVal Name As String)
+    Public Sub New(ByVal Name As String, ByVal AccessMode As String, _
+                   ByVal Category As String, ByVal Buffered As Boolean, _
+                   ByVal Description As String, ByVal InitialState As Boolean, _
+                   ByVal EventOnChange As Boolean, ByVal InvertValue As Boolean, _
+                   ByVal IO As aaAttrIO, ByVal StateLabels As aaAttrStateLabels, _
+                   ByVal History As aaAttrHistoryDiscrete, ByVal StateAlarm As aaAttrStateAlarm, _
+                   ByVal BadValueAlarm As aaAttrBadValueAlarm, ByVal Statistics As aaAttrStatistics)
+
         Me.Name = Name
+        Me.AttributeType = "Boolean"
+        Me.AccessMode = AccessMode
+        Me.Category = Category
+        Me.Description = Description
+        Me.InitialState = InitialState
+        Me.EventOnChange = EventOnChange
+        Me.InvertValue = InvertValue
+        Me.IO = IO
+        Me.StateLabels = StateLabels
+        Me.History = History
+        Me.StateAlarm = StateAlarm
+        Me.BadValueAlarm = BadValueAlarm
+        Me.Statistics = Statistics
     End Sub
 
 End Class
@@ -171,7 +170,7 @@ End Class
 
 <Serializable()> _
 Public Class aaAttrStateLabels
-    Public Enabled As Boolean
+    <XmlAttribute("enabled")> Public Enabled As Boolean
     Public OffMsg As String
     Public OnMsg As String
     Public Sub New()
@@ -185,7 +184,7 @@ End Class
 
 <Serializable()> _
 Public Class aaAttrHistoryDiscrete
-    Public Enabled As Boolean
+    <XmlAttribute("enabled")> Public Enabled As Boolean
     Public StoragePeriod As Integer
     Public Sub New()
     End Sub
@@ -197,7 +196,7 @@ End Class
 
 <Serializable()> _
 Public Class aaAttrStateAlarm
-    Public Enabled As Boolean
+    <XmlAttribute("enabled")> Public Enabled As Boolean
     Public ActiveAlarmState As Boolean
     Public Priority As Integer
     Public AlarmMsg As String
@@ -219,7 +218,7 @@ End Class
 
 <Serializable()> _
 Public Class aaAttrBadValueAlarm
-    Public Enabled As Boolean
+    <XmlAttribute("enabled")> Public Enabled As Boolean
     Public Priority As Integer
     Public AlarmMsg As String
     Public Sub New()
@@ -233,7 +232,7 @@ End Class
 
 <Serializable()> _
 Public Class aaAttrStatistics
-    Public Enabled As Boolean
+    <XmlAttribute("enabled")> Public Enabled As Boolean
     Public AutoResetOnBadInput As Boolean
     Public SampleSize As Integer ' only used on analog
     Public Sub New()

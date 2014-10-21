@@ -17,6 +17,10 @@ I built this using Visual Studio 2013, using .NET 4.5.
 
 I have only currently tested this on System Platform 2014, running on Windows Server 2012, 64-bit. However, I am building the package as an x86 target because of GR Access's build.
 
+## TODO List
+
+See my current roadmap and overall [TODO list](/TODO.md)
+
 ## Contributors
 
 * [Eliot Landrum](mailto:elandrum@stonetek.com), MES Analyst with [Stone Technologies](http://stonetek.com).

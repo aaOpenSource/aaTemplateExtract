@@ -27,4 +27,4 @@ See my current roadmap and overall [TODO list](/TODO.md)
 
 ## License
 
-MIT License. See the LICENSE file for details.
+MIT License. See the [LICENSE file](/LICENSE) for details.

@@ -9,6 +9,7 @@ These are not issues or bugs, just a roadmap for my development.
 - [ ] Export UDAs
 - [ ] Import XML to create new templates
 - [ ] Create a schema to document my XML structure
+- [ ] Export Aliases and Declarations for Scripts
 
 ## Minor Features
 - [ ] Add a schema version number to the XML files

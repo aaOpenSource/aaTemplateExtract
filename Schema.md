@@ -5,7 +5,7 @@ I currently don't have a proper schema for the XML output,
 but I wanted to start putting the revision numbers here so that 
 anyone using the application can know what's changed as I update the application.
 
-Can also be found in [aatemplateData.vb]((/aaTemplateExtract/aaTemplateData.vb)
+Can also be found in [aatemplateData.vb](/aaTemplateExtract/aaTemplateData.vb)
 
 ## Changelog
 
@@ -16,7 +16,8 @@ Can also be found in [aatemplateData.vb]((/aaTemplateExtract/aaTemplateData.vb)
 - Added template name and template revision number to each top level XML
 
 ### 1.1
-- Scripts and Attributes to two separate directories; added Discrete Field Attributes
+- Scripts and Attributes to two separate directories
+- Added Discrete Field Attributes
 
 ### 1.0
 - Scripts only

@@ -107,19 +107,21 @@ Public Class frmMain
 
                 Dim TemplateData = aaTemplateExtract.getTemplateData(TemplateName)
 
-                My.Computer.FileSystem.CreateDirectory(TemplateDirectory + "\Scripts\")
-                For Each ScriptData As aaScript In TemplateData.Scripts
-                    ScriptFile = TemplateDirectory + "\Scripts\" + ScriptData.Name + ".xml"
-                    objStreamWriter = New StreamWriter(ScriptFile)
-                    Dim x As New XmlSerializer(ScriptData.GetType)
-                    x.Serialize(objStreamWriter, ScriptData, ns)
-                    objStreamWriter.Close()
-                Next
+                ' If there's any Scripts in the template, export each one to its own XML file
+                If TemplateData.Scripts.Count > 0 Then
+                    My.Computer.FileSystem.CreateDirectory(TemplateDirectory + "\Scripts\")
+                    For Each ScriptData As aaScript In TemplateData.Scripts
+                        ScriptFile = TemplateDirectory + "\Scripts\" + ScriptData.Name + ".xml"
+                        objStreamWriter = New StreamWriter(ScriptFile)
+                        Dim x As New XmlSerializer(ScriptData.GetType)
+                        x.Serialize(objStreamWriter, ScriptData, ns)
+                        objStreamWriter.Close()
+                    Next
+                End If
 
-                My.Computer.FileSystem.CreateDirectory(TemplateDirectory + "\Attributes\")
-
+                ' If there's any Discrete Field Attributes, export them all to a single XML file
                 If TemplateData.FieldAttributesDiscrete.Count > 0 Then
-
+                    My.Computer.FileSystem.CreateDirectory(TemplateDirectory + "\Attributes\")
                     AttributeFile = TemplateDirectory + "\Attributes\Field Attributes - Discrete.xml"
                     objStreamWriter = New StreamWriter(AttributeFile)
                     For Each AttributeData As aaFieldAttributeDiscrete In TemplateData.FieldAttributesDiscrete
@@ -127,10 +129,21 @@ Public Class frmMain
                         x.Serialize(objStreamWriter, AttributeData, ns)
                     Next
                     objStreamWriter.Close()
-
                 End If
 
+                ' If there's any Analog Field Attributes, export them all to a single XML file
+                If TemplateData.FieldAttributesAnalog.Count > 0 Then
+                    My.Computer.FileSystem.CreateDirectory(TemplateDirectory + "\Attributes\")
+                    AttributeFile = TemplateDirectory + "\Attributes\Field Attributes - Analog.xml"
+                    objStreamWriter = New StreamWriter(AttributeFile)
+                    For Each AttributeData As aaFieldAttributeAnalog In TemplateData.FieldAttributesAnalog
+                        Dim x As New XmlSerializer(AttributeData.GetType)
+                        x.Serialize(objStreamWriter, AttributeData, ns)
+                    Next
+                    objStreamWriter.Close()
+                End If
             Next
+            MessageBox.Show("Done exporting " & TemplateNames.Count & " template(s).")
         Catch e As Exception
             MessageBox.Show("Error occurred: " & e.Message)
         End Try
@@ -222,4 +235,5 @@ Public Class frmMain
         lstTemplates.DataSource = aaTemplateExtract.getTemplates(chkHideBaseTemplates.CheckState)
         lblStatus.Text = ""
     End Sub
+
 End Class

@@ -22,6 +22,10 @@
 Imports System.IO
 Imports aaGRAccessApp
 
+''' <summary>
+''' The aaTemplateExtract class interfaces with GRAccess to connect, collect, and parse data from the Galaxy.
+''' All the hard work is in this class, but aaTemplateData contains the actual data structure.
+''' </summary>
 Public Class aaTemplateExtract
 
     ' Author: Eliot Landrum <elandrum@stonetek.com>
@@ -40,18 +44,21 @@ Public Class aaTemplateExtract
     Private grAccess As aaGRAccessApp.GRAccessApp
     Private myGalaxy As aaGRAccessApp.IGalaxy
 
-
+    ''' <summary>
+    ''' Initializes and sets up our GRAccess client app.
+    ''' </summary>
     Public Sub New()
-        ' set up all the initialization of this GRAccess client app
         grAccess = New aaGRAccessApp.GRAccessApp
         loggedIn = False
         showLogin = True
     End Sub
 
+    ''' <summary>
+    ''' Queries for all the galaxy names on this node.
+    ''' </summary>
+    ''' <param name="NodeName">The node name as a string (e.g. "localhost").</param>
+    ''' <returns>A collection of galaxy names as strings.</returns>
     Public Function getGalaxies(ByVal NodeName As String) As Collection
-
-        ' this function just returns a collection of all the galaxy names on this node
-
         Dim galaxies As aaGRAccessApp.IGalaxies
         Dim galaxy As aaGRAccessApp.IGalaxy
         Dim galaxyList As New Collection
@@ -75,14 +82,17 @@ Public Class aaTemplateExtract
         Return galaxyList
     End Function
 
+    ''' <summary>
+    ''' Given a Galaxy Name, sets our Client to that Galaxy.
+    ''' </summary>
+    ''' <param name="galaxyName">A string that is the Galaxy name.</param>
+    ''' <returns>Nothing</returns>
     Public Function setGalaxy(ByVal galaxyName)
         showLogin = True
         loggedIn = False
         Try
             If (galaxyNode IsNot Nothing) And (galaxyName IsNot Nothing) Then
                 myGalaxy = grAccess.QueryGalaxies(galaxyNode)(galaxyName)
-
-
 
                 ' TODO: Would like to dynamically show or hide the login dialog box based on security, 
                 ' but the API call inside of getAuthType() is not working as expected.
@@ -105,6 +115,11 @@ Public Class aaTemplateExtract
         Return 0
     End Function
 
+    ''' <summary>
+    ''' Determines what authentication type is required for this Galaxy.
+    ''' </summary>
+    ''' <returns>The authentication mode.</returns>
+    ''' <remarks>Not currently working.</remarks>
     Private Function getAuthType() As String
         Dim mode As String
         'Dim galaxySecurity As aaGRAccessApp.IGalaxySecurity
@@ -137,6 +152,36 @@ Public Class aaTemplateExtract
         Return mode
     End Function
 
+    ''' <summary>
+    ''' Tries to login to the Galaxy.
+    ''' </summary>
+    ''' <param name="user">User name, include Domain (e.g. "Domain\user") if authenticating against a domain.</param>
+    ''' <param name="password">Password</param>
+    ''' <returns>Status of login attempt.</returns>
+    Public Function login(ByVal user, ByVal password) As Integer
+        Try
+            myGalaxy.Login(user, password)
+            If myGalaxy.CommandResult.Successful Then
+                loggedIn = True
+                Return 0
+            Else
+                loggedIn = False
+                Return -1
+            End If
+        Catch e As Exception
+            loggedIn = False
+            MessageBox.Show("Error occurred: " & e.Message)
+            Return -2
+        End Try
+
+    End Function
+
+    ''' <summary>
+    ''' Discovers all of the templates in this Galaxy.
+    ''' </summary>
+    ''' <param name="HideBaseTemplates">If set, will not return the base templates that are in every Galaxy.</param>
+    ''' <returns>A collection of strings with the template names listed.</returns>
+    ''' <remarks>Does not return instances or checked in templates.</remarks>
     Public Function getTemplates(Optional ByVal HideBaseTemplates As Boolean = False) As Collection
         Dim templateList As New Collection
         Dim gTemplates As aaGRAccessApp.IgObjects
@@ -169,24 +214,11 @@ Public Class aaTemplateExtract
         Return templateList
     End Function
 
-    Public Function login(ByVal user, ByVal password) As Integer
-        Try
-            myGalaxy.Login(user, password)
-            If myGalaxy.CommandResult.Successful Then
-                loggedIn = True
-                Return 0
-            Else
-                loggedIn = False
-                Return -1
-            End If
-        Catch e As Exception
-            loggedIn = False
-            MessageBox.Show("Error occurred: " & e.Message)
-            Return -2
-        End Try
-
-    End Function
-
+    ''' <summary>
+    ''' This is the master function that is initiated for each template. Sub-functions will gather all of the attributes and scripts.
+    ''' </summary>
+    ''' <param name="TemplateName">The template name that is desired to get data from.</param>
+    ''' <returns>An aaTemplate class of all of the template data (scripts, UDAs, field attributes).</returns>
     Public Function getTemplateData(ByVal TemplateName As String) As aaTemplate
         Dim templateList(1) As String
         Dim gTemplates As aaGRAccessApp.IgObjects
@@ -210,6 +242,7 @@ Public Class aaTemplateExtract
 
                     ' instantiate our new template data object with all of our collected information
                     templateData = New aaTemplate(gTemplate.Tagname, _
+                                                  GetAttrInteger("ConfigVersion", gAttributes), _
                                                   getScripts(gAttributes),
                                                   GetFieldAttributesDiscrete(gAttributes), _
                                                   GetFieldAttributesAnalog(gAttributes))
@@ -226,6 +259,11 @@ Public Class aaTemplateExtract
 
     End Function
 
+    ''' <summary>
+    ''' Gets all of the scripts for the given template and puts it into a nice collection of scripts.
+    ''' </summary>
+    ''' <param name="gAttributes">All of the Configurable Attributes that were found for this template.</param>
+    ''' <returns>A collection of all of the scripts using the aaScript class.</returns>
     Private Function getScripts(gAttributes As aaGRAccess.IAttributes) As Collection
         Dim scriptList As New Collection
         Dim scriptData As aaScript
@@ -243,19 +281,24 @@ Public Class aaTemplateExtract
 
             ' build a script object with the attributes
             scriptData = New aaScript(script, _
-                                            gAttributes.Item(script + ".ScriptExecutionGroup").value.GetString, _
-                                            gAttributes.Item(script + ".ScriptOrder").value.GetString, _
-                                            gAttributes.Item(script + ".OffScanText").value.GetString, _
-                                            gAttributes.Item(script + ".OnScanText").value.GetString, _
-                                            gAttributes.Item(script + ".ShutdownText").value.GetString, _
-                                            gAttributes.Item(script + ".StartupText").value.GetString, _
-                                            gAttributes.Item(script + ".Expression").value.GetString, _
-                                            gAttributes.Item(script + ".TriggerType").value.GetString, _
-                                            gAttributes.Item(script + ".TriggerPeriod").value.GetString, _
-                                            gAttributes.Item(script + ".TriggerOnQualityChange").value.GetBoolean, _
-                                            gAttributes.Item(script + ".ExecuteTimeout.Limit").value.GetInteger, _
-                                            gAttributes.Item(script + ".RunsAsync").value.GetString, _
-                                            gAttributes.Item(script + ".ExecuteText").value.GetString)
+                GetAttrString("Tagname", gAttributes), _
+                GetAttrInteger("ConfigVersion", gAttributes), _
+                GetAttrString(script + ".ScriptExecutionGroup", gAttributes), _
+                GetAttrString(script + ".ScriptOrder", gAttributes), _
+                GetAttrString(script + ".Aliases", gAttributes), _
+                GetAttrString(script + ".AliasReferences", gAttributes), _
+                GetAttrString(script + ".DeclarationsText", gAttributes), _
+                GetAttrString(script + ".OffScanText", gAttributes), _
+                GetAttrString(script + ".OnScanText", gAttributes), _
+                GetAttrString(script + ".ShutdownText", gAttributes), _
+                GetAttrString(script + ".StartupText", gAttributes), _
+                GetAttrString(script + ".Expression", gAttributes), _
+                GetAttrString(script + ".TriggerType", gAttributes), _
+                GetAttrString(script + ".TriggerPeriod", gAttributes), _
+                GetAttrBoolean(script + ".TriggerOnQualityChange", gAttributes), _
+                GetAttrInteger(script + ".ExecuteTimeout.Limit", gAttributes), _
+                GetAttrString(script + ".RunsAsync", gAttributes), _
+                GetAttrString(script + ".ExecuteText", gAttributes))
 
             ' pop it on to a collection of scripts for this template
             templateScripts.Add(scriptData, script)
@@ -264,6 +307,12 @@ Public Class aaTemplateExtract
         Return templateScripts
     End Function
 
+    ''' <summary>
+    ''' Gets all of the Discrete Field Attributes for a given template. 
+    ''' </summary>
+    ''' <param name="gAttributes">All of the Configurable Attributes that were found for this template.</param>
+    ''' <returns>A collection of all of the Discrete Field Attributes using the aaFieldAttributeDiscrete class.</returns>
+    ''' <remarks></remarks>
     Private Function GetFieldAttributesDiscrete(gAttributes As aaGRAccess.IAttributes) As Collection
         Dim FieldAttributes As New Collection()
 
@@ -281,45 +330,46 @@ Public Class aaTemplateExtract
 
             ' The basic input/output attributes
             Dim IO = New aaAttrIO(GetAttrString(attrName + ".Input.InputSource", gAttributes), _
-                                   GetAttrBoolean(attrName + ".Output.DiffAddr", gAttributes), _
-                                   GetAttrString(attrName + ".Output.OutputDest", gAttributes))
+                GetAttrBoolean(attrName + ".Output.DiffAddr", gAttributes), _
+                GetAttrString(attrName + ".Output.OutputDest", gAttributes))
 
             ' State Labels, can be disabled
             Dim StateLabels = New aaAttrStateLabels(GetAttrBoolean(attrName + ".UseOffOnMsg", gAttributes), _
-                                                     GetAttrString(attrName + ".OffMsg", gAttributes), _
-                                                     GetAttrString(attrName + ".OnMsg", gAttributes))
+                GetAttrString(attrName + ".OffMsg", gAttributes), _
+                GetAttrString(attrName + ".OnMsg", gAttributes))
 
             ' Historization, can be disabled
             Dim History = New aaAttrHistoryDiscrete(GetAttrBoolean(attrName + ".Historized", gAttributes), _
-                                                     GetAttrInteger(attrName + ".ForceStoragePeriod", gAttributes))
+                GetAttrInteger(attrName + ".ForceStoragePeriod", gAttributes))
 
             ' State Alarms, can be disabled
             Dim StateAlarm = New aaAttrStateAlarm(GetAttrBoolean(attrName + ".Alarmed", gAttributes), _
-                                                   GetAttrBoolean(attrName + ".ActiveAlarmState", gAttributes), _
-                                                   GetAttrInteger(attrName + ".Priority", gAttributes), _
-                                                   GetAttrString(attrName + ".DescAttrName", gAttributes), _
-                                                   GetAttrString(attrName + ".Category", gAttributes), _
-                                                   GetAttrString(attrName + ".TimeDeadband", gAttributes))
+                GetAttrBoolean(attrName + ".ActiveAlarmState", gAttributes), _
+                GetAttrInteger(attrName + ".Priority", gAttributes), _
+                GetAttrString(attrName + ".DescAttrName", gAttributes), _
+                GetAttrString(attrName + ".Category", gAttributes), _
+                GetAttrString(attrName + ".TimeDeadband", gAttributes))
 
             ' Bad Value Alarm, can be disabled
             Dim BadValueAlarm = New aaAttrBadValueAlarm(GetAttrBoolean(attrName + ".Bad.Alarmed", gAttributes), _
-                                                         GetAttrInteger(attrName + ".Bad.Priority", gAttributes), _
-                                                         GetAttrInteger(attrName + ".Bad.DescAttrName", gAttributes))
+                GetAttrInteger(attrName + ".Bad.Priority", gAttributes), _
+                GetAttrInteger(attrName + ".Bad.DescAttrName", gAttributes))
 
             ' Statistics, can be disabled
             Dim Statistics = New aaAttrStatistics(GetAttrBoolean(attrName + ".HasStatistics", gAttributes), _
-                                                   GetAttrBoolean(attrName + ".Stats.AutoResetOnBadInput", gAttributes), 0)
+                GetAttrBoolean(attrName + ".Stats.AutoResetOnBadInput", gAttributes), 0)
 
             ' Now, put all of the info together into one data set for this attribute
             Dim DiscreteAttrData = New aaFieldAttributeDiscrete(attrName, _
-                                                           GetAttrString(attrName + ".AccessMode", gAttributes), _
-                                                           GetAttrString(attrName + ".Category", gAttributes), _
-                                                           GetAttrString(attrName + "._HasBuffer", gAttributes), _
-                                                           GetAttrString(attrName + ".Desc", gAttributes), _
-                                                           GetAttrBoolean(attrName, gAttributes), _
-                                                           GetAttrBoolean(attrName + ".LogDataChangeEvent", gAttributes), _
-                                                           GetAttrBoolean(attrName + ".InvertValue", gAttributes), _
-                                                           IO, StateLabels, History, StateAlarm, BadValueAlarm, Statistics)
+                GetAttrString("Tagname", gAttributes), _
+                GetAttrInteger("ConfigVersion", gAttributes), _
+                GetAttrString(attrName + ".AccessMode", gAttributes), _
+                GetAttrString(attrName + "._HasBuffer", gAttributes), _
+                GetAttrString(attrName + ".Desc", gAttributes), _
+                GetAttrBoolean(attrName, gAttributes), _
+                GetAttrBoolean(attrName + ".LogDataChangeEvent", gAttributes), _
+                GetAttrBoolean(attrName + ".InvertValue", gAttributes), _
+                IO, StateLabels, History, StateAlarm, BadValueAlarm, Statistics)
 
 
             ' Finally, add it to a (growing) collection of field attributes
@@ -329,6 +379,12 @@ Public Class aaTemplateExtract
         Return FieldAttributes
     End Function
 
+    ''' <summary>
+    ''' Gets all of the Analog Field Attributes for a given template. 
+    ''' </summary>
+    ''' <param name="gAttributes">All of the Configurable Attributes that were found for this template.</param>
+    ''' <returns>A collection of all of the Analog Field Attributes using the aaFieldAttributeAnalog class.</returns>
+    ''' <remarks></remarks>
     Private Function GetFieldAttributesAnalog(gAttributes As aaGRAccess.IAttributes) As Collection
         Dim FieldAttributes As New Collection()
 
@@ -340,14 +396,124 @@ Public Class aaTemplateExtract
         For Each attr In attrList
             Dim attrName = attr.Value
 
-            ' TODO (this is much bigger than the Discrete Attributes)
+            ' These are all groupings on the Field Attributes editing screen. 
+            ' They are not necessarily grouped nicely in the Attributes list. 
+            ' I prefer that it be organized like the screen for easy comparing.
+
+            ' Input/Output
+            Dim IO = New aaAttrIO(GetAttrString(attrName + ".Input.InputSource", gAttributes), _
+                GetAttrBoolean(attrName + ".Output.DiffAddr", gAttributes), _
+                GetAttrString(attrName + ".Output.OutputDest", gAttributes))
+
+            ' IO scaling, can be disabled
+            Dim IOScaling = New aaAttrIOScaling(GetAttrBoolean(attrName + ".Scaled", gAttributes), _
+                GetAttrFloat(attrName + ".RawMin", gAttributes), _
+                GetAttrFloat(attrName + ".RawMax", gAttributes), _
+                GetAttrFloat(attrName + ".EngUnitsMin", gAttributes), _
+                GetAttrFloat(attrName + ".EngUnitsMax", gAttributes), _
+                GetAttrFloat(attrName + ".EngUnitsRangeMin", gAttributes), _
+                GetAttrFloat(attrName + ".EngUnitsRangeMax", gAttributes), _
+                GetAttrString(attrName + ".ConversionMode", gAttributes), _
+                GetAttrString(attrName + ".ClampEnabled", gAttributes))
+
+            ' Historization, can be disabled
+            Dim History = New aaAttrHistoryAnalog(GetAttrBoolean(attrName + ".Historized", gAttributes), _
+                GetAttrInteger(attrName + ".ForceStoragePeriod", gAttributes), _
+                GetAttrInteger(attrName + ".ValueDeadband", gAttributes), _
+                GetAttrString(attrName + ".InterpolationType", gAttributes), _
+                GetAttrFloat(attrName + ".RolloverValue", gAttributes), _
+                GetAttrFloat(attrName + ".TrendHi", gAttributes), _
+                GetAttrFloat(attrName + ".Trendlo", gAttributes), _
+                GetAttrBoolean(attrName + ".EnableSwingingDoor", gAttributes), _
+                GetAttrFloat(attrName + ".RateDeadBand", gAttributes))
+
+            ' Level Alarm, can be disabled
+            Dim LevelAlarm = New aaAttrLevelAlarm(GetAttrBoolean(attrName + ".LevelAlarmed", gAttributes), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".HiHi.Alarmed", gAttributes), _
+                    GetAttrFloat(attrName + ".HiHi.Limit", gAttributes), _
+                    GetAttrInteger(attrName + ".HiHi.Priority", gAttributes), _
+                    GetAttrString(attrName + ".HiHi.DescAttrName", gAttributes)), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".Hi.Alarmed", gAttributes), _
+                    GetAttrFloat(attrName + ".Hi.Limit", gAttributes), _
+                    GetAttrInteger(attrName + ".Hi.Priority", gAttributes), _
+                    GetAttrString(attrName + ".Hi.DescAttrName", gAttributes)), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".Lo.Alarmed", gAttributes), _
+                    GetAttrFloat(attrName + ".Lo.Limit", gAttributes), _
+                    GetAttrInteger(attrName + ".Lo.Priority", gAttributes), _
+                    GetAttrString(attrName + ".Lo.DescAttrName", gAttributes)), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".LoLo.Alarmed", gAttributes), _
+                    GetAttrFloat(attrName + ".LoLo.Limit", gAttributes), _
+                    GetAttrInteger(attrName + ".LoLo.Priority", gAttributes), _
+                    GetAttrString(attrName + ".LoLo.DescAttrName", gAttributes)), _
+                GetAttrFloat(attrName + ".ValueDeadband", gAttributes), _
+                GetAttrFloat(attrName + ".TimeDeadband", gAttributes))
+
+            ' Rate of Change Alarm, can be disabled
+            Dim ROCAlarm = New aaAttrROCAlarm(GetAttrBoolean(attrName + ".ROCAlarmed", gAttributes), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".Roc.IncreasingHi.Alarmed", gAttributes), _
+                    GetAttrFloat(attrName + ".Roc.IncreasingHi.Limit", gAttributes), _
+                    GetAttrInteger(attrName + ".Roc.IncreasingHi.Priority", gAttributes), _
+                    GetAttrString(attrName + ".Roc.IncreasingHi.DescAttrName", gAttributes)), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".Roc.DecreasingHi.Alarmed", gAttributes), _
+                    GetAttrFloat(attrName + ".Roc.DecreasingHi.Limit", gAttributes), _
+                    GetAttrInteger(attrName + ".Roc.DecreasingHi.Priority", gAttributes), _
+                    GetAttrString(attrName + ".Roc.DecreasingHi.DescAttrName", gAttributes)), _
+                    GetAttrString(attrName + ".Roc.Rate.Units", gAttributes), _
+                    GetAttrInteger(attrName + ".Roc.EvalPeriod", gAttributes))
+
+            ' Deviation Alarm, can be disabled
+            Dim DeviationAlarm = New aaAttrDeviationAlarm(GetAttrBoolean(attrName + ".DeviationAlarmed", gAttributes), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".Dev.Major.Alarmed", gAttributes), _
+                    GetAttrFloat(attrName + ".Dev.Major.Tolerance", gAttributes), _
+                    GetAttrInteger(attrName + ".Dev.Major.Priority", gAttributes), _
+                    GetAttrString(attrName + ".Dev.Major.DescAttrName", gAttributes)), _
+                New aaAttrAnalogLimit(GetAttrBoolean(attrName + ".Dev.Minor.Alarmed", gAttributes), _
+                     GetAttrFloat(attrName + ".Dev.Minor.Tolerance", gAttributes), _
+                     GetAttrInteger(attrName + ".Dev.Minor.Priority", gAttributes), _
+                     GetAttrString(attrName + ".Dev.Minor.DescAttrName", gAttributes)),
+                GetAttrFloat(attrName + ".Dev.Target", gAttributes), _
+                GetAttrFloat(attrName + ".Dev.Deadband", gAttributes), _
+                GetAttrString(attrName + ".Dev.SettlingPeriod", gAttributes))
+
+            ' Bad Value Alarm, can be disabled
+            Dim BadValueAlarm = New aaAttrBadValueAlarm(GetAttrBoolean(attrName + ".Bad.Alarmed", gAttributes), _
+                GetAttrInteger(attrName + ".Bad.Priority", gAttributes), _
+                GetAttrString(attrName + ".Bad.DescAttrName", gAttributes))
+
+            ' Statistics, can be disabled
+            Dim Statistics = New aaAttrStatistics(GetAttrBoolean(attrName + ".HasStatistics", gAttributes), _
+                GetAttrBoolean(attrName + ".Stats.AutoResetOnBadInput", gAttributes), _
+                GetAttrInteger(attrName + ".Stats.SampleSize", gAttributes))
+
+            ' Now, put all of the info together into one data set for this attribute
+            Dim AnalogAttrData = New aaFieldAttributeAnalog(attrName,
+                GetAttrString("Tagname", gAttributes), _
+                GetAttrInteger("ConfigVersion", gAttributes), _
+                GetAttrString(attrName + ".AnalogType", gAttributes), _
+                GetAttrString(attrName + ".AccessMode", gAttributes), _
+                GetAttrBoolean(attrName + "._HasBuffer", gAttributes), _
+                GetAttrString(attrName + ".Desc", gAttributes), _
+                GetAttrFloat(attrName, gAttributes), _
+                GetAttrBoolean(attrName + ".LogDataChangeEvent", gAttributes), _
+                IO, IOScaling, History, LevelAlarm, ROCAlarm, DeviationAlarm, _
+                BadValueAlarm, Statistics)
+
+            ' Finally, add it to a (growing) collection of field attributes
+            FieldAttributes.Add(AnalogAttrData)
         Next
 
         Return FieldAttributes
     End Function
 
+    ''' <summary>
+    ''' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program.
+    ''' </summary>
+    ''' <param name="AttributeName">The Attribute Name that exists in the template.</param>
+    ''' <param name="gAttributes">All of the Configurable Attributes that were found for this template.</param>
+    ''' <returns>Either the value of the Attribute or a blank string.</returns>
+    ''' <remarks></remarks>
     Private Function GetAttrString(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As String
-        ' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program
+        ' 
         Try
             Return gAttributes.Item(AttributeName).value.GetString()
         Catch ex As Exception
@@ -355,6 +521,13 @@ Public Class aaTemplateExtract
         End Try
     End Function
 
+    ''' <summary>
+    ''' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program.
+    ''' </summary>
+    ''' <param name="AttributeName">The Attribute Name that exists in the template.</param>
+    ''' <param name="gAttributes">All of the Configurable Attributes that were found for this template.</param>
+    ''' <returns>Either the value of the Attribute or a boolean false.</returns>
+    ''' <remarks></remarks>
     Private Function GetAttrBoolean(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As Boolean
         ' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program
         Try
@@ -364,6 +537,13 @@ Public Class aaTemplateExtract
         End Try
     End Function
 
+    ''' <summary>
+    ''' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program.
+    ''' </summary>
+    ''' <param name="AttributeName">The Attribute Name that exists in the template.</param>
+    ''' <param name="gAttributes">All of the Configurable Attributes that were found for this template.</param>
+    ''' <returns>Either the value of the Attribute or a zero.</returns>
+    ''' <remarks></remarks>
     Private Function GetAttrInteger(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As Integer
         ' Since the attribute may not exist, need to provide a safe, concise way to get it without crashing the program
         Try
@@ -382,4 +562,18 @@ Public Class aaTemplateExtract
         End Try
     End Function
 
+    ''' <summary>
+    ''' Determines if the given attribute is locked or not.
+    ''' </summary>
+    ''' <param name="AttributeName">The Attribute Name that exists in the template.</param>
+    ''' <param name="gAttributes">All of the Configurable Attributes that were found for this template.</param>
+    ''' <returns>Either the attribute locked status or a false.</returns>
+    ''' <remarks></remarks>
+    Private Function GetLockedStatus(ByVal AttributeName As String, gAttributes As aaGRAccess.IAttributes) As Boolean
+        Try
+            Return gAttributes.Item(AttributeName).Locked
+        Catch ex As Exception
+            Return False
+        End Try
+    End Function
 End Class

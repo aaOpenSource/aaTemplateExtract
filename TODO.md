@@ -10,6 +10,7 @@ These are not issues or bugs, just a roadmap for my development.
 - [x] Export Aliases and Declarations for Scripts
 - [ ] Create a schema to document my XML structure
 - [ ] Import XML to create new templates
+- [ ] Export graphics using ArchestrA.Visualization.GraphicAccess
 
 ## Minor Features
 - [x] Add a schema version number to the XML files

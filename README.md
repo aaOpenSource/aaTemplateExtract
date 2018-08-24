@@ -9,7 +9,7 @@ Wonderware ArchestrA System Platform templates can only be natively exported to 
 
 ## Installation
 
-Because of GR Access Toolkit licensing, I cannot distribute a binary executable format of this program. You'll need to download and install the GR Access and then build the program yourself. GR Access is available from the [Wonderware Developer Network Downloads](https://wdn.wonderware.com/sites/WDN/Pages/Downloads/software.aspx). Look for **Wonderware GR Access Toolkit 2014** under **Wonderware System Platform**.
+Because of GR Access Toolkit licensing, I cannot distribute a binary executable format of this program. You'll need to download and install the GR Access and then build the program yourself. GR Access is available from the [Wonderware Developer Network Downloads](https://softwaresupportsp.schneider-electric.com/#/producthub/details?id=528). Look for **Wonderware GR Access Toolkit 2014** under **Wonderware System Platform**.
 
 I built this using Visual Studio 2013, using .NET 4.5.
 
